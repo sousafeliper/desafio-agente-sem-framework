@@ -22,6 +22,15 @@ get_player_stats: Extrai os dados numéricos de performance de uma temporada esp
 
 get_player_trophies: Recupera o histórico de conquistas do atleta.
 
+🔁 Implementação Manual do Loop ReAct
+Conforme os novos requisitos, o mecanismo automático de chamadas de função do SDK do Gemini foi desativado. Agora, controlamos explicitamente o ciclo no arquivo `agent.py`:
+
+1. **User Prompt**: O usuário faz uma pergunta no terminal (`main.py`).
+2. **Thought (Pensamento)**: O Gemini avalia o histórico e determina se precisa coletar dados externos ou se já pode responder.
+3. **Action (Ação)**: Caso precise de dados, o modelo emite uma requisição estruturada indicando qual ferramenta usar. Nosso script intercepta essa requisição e executa a função correspondente em `tools.py`.
+4. **Observation (Observação)**: O resultado retornado pela API-Football é encapsulado e injetado de volta no histórico de mensagens do modelo.
+5. **Loop**: Esse processo se repete até que o modelo decida que possui dados suficientes para formular a resposta final.
+
 🚀 Como Rodar o Projeto
 Dependências:
 
@@ -52,3 +61,15 @@ Aprendizado: O agente demonstrou autonomia ao "raciocinar" que, se o jogador nã
 
 3. Tratamento de Tipos em APIs REST
 Lidar com retornos que oscilavam entre float e int nos IDs causou erros de execução. Refinei as ferramentas para garantir o casting correto dos dados antes de qualquer interpolação de strings em URLs.
+
+4. Estabilidade do Loop ReAct e Lidar com Limitações do SDK
+Durante a evolução, o parsing das estruturas de resposta (como `function_calls` vs `Candidate.parts`) causou crashes, além da interrupção prematura do modelo por limite de iterações do loop.
+
+Solução implementada:
+- Aumentamos e tornamos o `MAX_REACT_ITERATIONS` configurável via variáveis de ambiente, prevenindo cortes antecipados na linha de pensamento do agente. Adicionamos rastreio via console (logs `[DEBUG] Iteração X/Y`) para facilitar debug.
+- Tornamos o wrapper que interage com o SDK do Gemini super-resiliente a falhas de parsing (extratificando argumentos com iteradores no protobuffer) e forçamos a devolutiva do resultado de ações como `"user"` prompt para manter o modelo ativado no processo.
+
+5. Correspondência Confusa de Buscas na API-Football (Fuzzy Match)
+Para equipes de nomes longos e compostos (como o Al Hilal), o "search" da API trazia retornos duvidosos pela confusão de "Fuzzy Matching" da plataforma (ex: "Al Hilal Kadougli" do Sudão no lugar do Saudi).
+
+Solução: Aplicamos um filtro estrito direto na ferramenta de `get_team_id` em Python, percorrendo o JSON das respostas identificando chaves de países (ex: `Saudi` ou `Arábia`) dentro do dicionário retornado, garantindo que o agente manipule somente IDs de contexto correto e continue o fluxo de forma exata rumo à pesquisa final do jogador.
