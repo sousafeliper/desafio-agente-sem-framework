@@ -14,6 +14,7 @@ Observações de implementação:
 """
 
 import requests
+import json
 import os
 from dotenv import load_dotenv
 
@@ -22,6 +23,28 @@ load_dotenv()
 # Configuração de cabeçalhos para a API-Football; depende de FOOTBALL_API_KEY
 API_KEY = os.getenv("FOOTBALL_API_KEY")
 HEADERS = {"x-apisports-key": API_KEY}
+MEMORY_FILE = "memory.json"
+
+
+def load_memory():
+    """Carrega o cache local de times e jogadores em JSON."""
+    if os.path.exists(MEMORY_FILE):
+        try:
+            with open(MEMORY_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    data.setdefault("teams", {})
+                    data.setdefault("players", {})
+                    return data
+        except Exception:
+            pass
+    return {"teams": {}, "players": {}}
+
+
+def save_memory(memory_data):
+    """Salva o cache local em JSON com indentação para leitura humana."""
+    with open(MEMORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(memory_data, f, ensure_ascii=False, indent=4)
 
 
 def get_team_id(team_name: str):
@@ -32,8 +55,16 @@ def get_team_id(team_name: str):
     o nome canônico encontrado pela API. Em caso de resposta vazia, retorna
     uma mensagem de erro legível para o terminal/usuário.
     """
+    memory = load_memory()
     # Remove hífens que costumam quebrar a busca da API-Football
     search_name = team_name.replace("-", " ")
+    cache_key = search_name.lower().strip()
+
+    # Verifica cache local antes de chamar API
+    if cache_key in memory["teams"]:
+        print("[MEMÓRIA] Time carregado do arquivo local!")
+        return memory["teams"][cache_key]
+
     print(f"DEBUG: Tentando buscar time como: {search_name}")
 
     # Ajustes cruciais para a API-Sports: se buscar 'Al Hilal', ela pode retornar um time aleatório
@@ -62,8 +93,15 @@ def get_team_id(team_name: str):
                 best_match = team_info
                 break
 
+    print("[API] Buscando time na API-Football...")
     print(f"DEBUG: Time encontrado na API: {best_match['name']} (ID: {best_match['id']})")
-    return {"team_id": int(best_match['id']), "team_name": best_match['name']}
+    result = {"team_id": int(best_match['id']), "team_name": best_match['name']}
+
+    # Persiste no cache local
+    memory["teams"][cache_key] = result
+    save_memory(memory)
+
+    return result
 
 
 def get_player_id(player_name: str, team_id: int = None):
@@ -73,6 +111,16 @@ def get_player_id(player_name: str, team_id: int = None):
     Retorna um dict com `player_id` e `name` quando encontrado, ou uma string
     informando que o jogador não foi localizado neste time.
     """
+    memory = load_memory()
+    normalized_player = player_name.lower().strip()
+    normalized_team = "global" if team_id is None else str(team_id).strip()
+    player_cache_key = f"{normalized_player}|{normalized_team}"
+
+    # Verifica cache local antes de chamar API
+    if player_cache_key in memory["players"]:
+        print("[MEMÓRIA] Jogador carregado do arquivo local!")
+        return memory["players"][player_cache_key]
+
     # Se forneceram team_id, inclui no filtro. Caso contrário, busca global.
     url = "https://v3.football.api-sports.io/players"
     params = {"search": player_name, "season": 2023}
@@ -91,7 +139,10 @@ def get_player_id(player_name: str, team_id: int = None):
 
     if data.get('response'):
         p = data['response'][0]['player']
-        return {"player_id": int(p['id']), "name": p['name']}
+        result = {"player_id": int(p['id']), "name": p['name']}
+        memory["players"][player_cache_key] = result
+        save_memory(memory)
+        return result
     return "Jogador não encontrado neste time específico."
 
 

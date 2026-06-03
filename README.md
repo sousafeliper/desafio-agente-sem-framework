@@ -11,7 +11,7 @@ Extrair estatísticas de desempenho (gols/assistências) por temporada.
 Listar o histórico de títulos (troféus) de atletas.
 
 🛠️ Arquitetura e Ferramentas
-A arquitetura foi baseada no Function Calling nativo do Google Gemini. O fluxo de raciocínio é dinâmico: o modelo decide qual ferramenta chamar com base no retorno da anterior.
+A arquitetura usa o SDK atual `google.genai` com um loop ReAct manual. O modelo raciocina em texto, o script intercepta a ação solicitada e executa a ferramenta correspondente, sem depender do pacote legado `google.generativeai`.
 
 Ferramentas (Python Functions):
 get_team_id: Busca o ID único de um clube (parâmetro obrigatório para filtros de busca).
@@ -25,9 +25,9 @@ get_player_trophies: Recupera o histórico de conquistas do atleta.
 🔁 Implementação Manual do Loop ReAct
 Conforme os novos requisitos, o mecanismo automático de chamadas de função do SDK do Gemini foi desativado. Agora, controlamos explicitamente o ciclo no arquivo `agent.py`:
 
-1. **User Prompt**: O usuário faz uma pergunta no terminal (`main.py`).
+1. **User Prompt**: O usuário faz uma pergunta no terminal ([main.py](main.py)).
 2. **Thought (Pensamento)**: O Gemini avalia o histórico e determina se precisa coletar dados externos ou se já pode responder.
-3. **Action (Ação)**: Caso precise de dados, o modelo emite uma requisição estruturada indicando qual ferramenta usar. Nosso script intercepta essa requisição e executa a função correspondente em `tools.py`.
+3. **Action (Ação)**: Caso precise de dados, o modelo emite uma requisição estruturada indicando qual ferramenta usar. O script intercepta essa requisição e executa a função correspondente em [tools.py](tools.py).
 4. **Observation (Observação)**: O resultado retornado pela API-Football é encapsulado e injetado de volta no histórico de mensagens do modelo.
 5. **Loop**: Esse processo se repete até que o modelo decida que possui dados suficientes para formular a resposta final.
 
@@ -35,7 +35,7 @@ Conforme os novos requisitos, o mecanismo automático de chamadas de função do
 Dependências:
 
 Bash
-pip install google-generativeai requests python-dotenv
+pip install google-genai requests python-dotenv
 Configuração:
 Crie um arquivo .env na raiz com suas chaves:
 
