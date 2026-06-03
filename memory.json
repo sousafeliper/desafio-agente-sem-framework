@@ -1,0 +1,14 @@
+{
+    "teams": {
+        "goias": {
+            "team_id": 151,
+            "team_name": "Goias"
+        }
+    },
+    "players": {
+        "tadeu|151": {
+            "player_id": 10335,
+            "name": "Tadeu"
+        }
+    }
+}
