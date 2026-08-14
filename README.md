@@ -1,7 +1,7 @@
-⚽ Agente de Dados Futebolísticos (Zero-Framework)
+## Agente de Dados Futebolísticos (Zero-Framework)
 Este projeto foi desenvolvido para o Desafio de Nivelamento, com o objetivo de implementar um agente de IA funcional em Python, sem o uso de frameworks prontos (como LangChain ou CrewAI), utilizando o Gemini 3.1 Flash Lite e a API-Football.
 
-🧠 O Que o Agente Faz
+## O Que o Agente Faz
 O agente atua como um analista de futebol avançado. Ele não apenas busca dados, mas raciocina sobre as limitações das ferramentas para entregar a melhor resposta possível. Ele é capaz de:
 
 Identificar IDs de clubes e jogadores para consultas precisas.
@@ -10,7 +10,7 @@ Extrair estatísticas de desempenho (gols/assistências) por temporada.
 
 Listar o histórico de títulos (troféus) de atletas.
 
-🛠️ Arquitetura e Ferramentas
+## Arquitetura e Ferramentas
 A arquitetura usa o SDK atual `google.genai` com um loop ReAct manual. O modelo raciocina em texto, o script intercepta a ação solicitada e executa a ferramenta correspondente, sem depender do pacote legado `google.generativeai`.
 
 Ferramentas (Python Functions):
@@ -22,7 +22,7 @@ get_player_stats: Extrai os dados numéricos de performance de uma temporada esp
 
 get_player_trophies: Recupera o histórico de conquistas do atleta.
 
-🔁 Implementação Manual do Loop ReAct
+## Implementação Manual do Loop ReAct
 Conforme os novos requisitos, o mecanismo automático de chamadas de função do SDK do Gemini foi desativado. Agora, controlamos explicitamente o ciclo no arquivo `agent.py`:
 
 1. **User Prompt**: O usuário faz uma pergunta no terminal ([main.py](main.py)).
@@ -31,7 +31,7 @@ Conforme os novos requisitos, o mecanismo automático de chamadas de função do
 4. **Observation (Observação)**: O resultado retornado pela API-Football é encapsulado e injetado de volta no histórico de mensagens do modelo.
 5. **Loop**: Esse processo se repete até que o modelo decida que possui dados suficientes para formular a resposta final.
 
-🚀 Como Rodar o Projeto
+## Como Rodar o Projeto
 Dependências:
 
 Bash
@@ -46,7 +46,8 @@ Execução:
 
 Bash
 python main.py
-📈 Desafios e Aprendizados
+
+## Desafios e Aprendizados
 O desenvolvimento deste agente foi um exercício intenso de resolução de problemas reais de integração.
 
 1. O Problema da Ambiguidade de Dados
